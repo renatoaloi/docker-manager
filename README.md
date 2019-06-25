@@ -9,26 +9,26 @@ Create virtual environment:
 > virtualenv env
 ```
 
-Activate environment:
+Activate environment ```Windows```:
 
-(Windows)
 ```
 > .\env\Scripts\activate
 ```
 
-(Linux/MAC)
+Activate environment ```Linux/MAC```:
+
 ```
 > source ./env/bin/activate
 ```
 
-Install requirements:
+Install requirements ```Windows```:
 
-(Windows)
 ```
 (env) > pip install -r requirements.txt
 ```
 
-(Linux/MAC)
+Install requirements ```Linux/MAC```:
+
 ```
 (env) > pip install -r requirements-linux.txt
 ```
