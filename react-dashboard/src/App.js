@@ -1,34 +1,122 @@
 import React from 'react';
 import logo from './logo.svg';
 import './App.css';
-import { Table, Row, Col, Container, Alert } from 'react-bootstrap';
-import axios from 'axios'
+import { Table, Row, Col, Container, Alert, Button } from 'react-bootstrap';
+import axios from 'axios';
+import moment from 'moment';
+import Loader from 'react-loader-spinner'
+
+const alertInitialState = { display: false, type: 'danger', message: 'An error occurred! Please try again later.' };
 
 class App extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      alert: { display: false, type: 'danger' },
-      containers: []
+      alert: alertInitialState,
+      containers: [],
+      time: Date.now(),
+      spinner: false,
     }
   }
 
   componentDidMount() {
+    // Fetching data
+    this.requestData();
+
+    // If we need periodically refresh
+    //this.interval = setInterval(() => {
+      //this.requestData();
+    //}, 15000);
+  }
+
+  // function to request list of containers from API
+  requestData() {
     var self = this;
+    // Turning spinner on
+    self.setState({ spinner: true });
+    // Getting containers list
     axios.get('http://localhost:8000/api/list').then(response => {
+      // Log
       console.log(response);
-      self.setState({ 
-        containers: response.data.containers_list, 
-        alert: { display: false, type: 'danger' }
-       });
+      // Setting state when finished updating datagrid, alert and spinner
+      self.setState({
+        containers: response.data.containers_list,
+        alert: alertInitialState,
+        spinner: false
+      });
     }).catch(function (error) {
+      // If we got an error
       console.log(error);
-      self.setState({ alert: { display: true, type: 'danger' } });
+      // Turn on alert with error message
+      self.setState({ alert: { ...alertInitialState, display: true }, spinner: false });
+    });
+    this.setState({ time: Date.now() });
+  }
+
+  componentWillUnmount() {
+    //clearInterval(this.interval);
+  }
+
+  // function to send commands to API, where idx is the container id and type is 'play' or 'stop'
+  sendGet(idx, type) {
+    const self = this;
+    console.log('cheguei no sendget', type);
+    var schedule = false; // only schedule if is a restart
+    // Turning spinner on
+    self.setState({ spinner: true });
+    // Check if it is a restart
+    if (type === 'restart') {
+      // first stop
+      type = 'stop';
+      // then schedule the start
+      schedule = true;
+    }
+    // Send get to play or stop
+    axios.get('http://localhost:8000/api/' + type + '?idx=' + idx).then(response => {
+      console.log(response);
+      // Deal the return
+      if (response.data.retorno === 'OK') {
+        self.setState({
+          alert: alertInitialState,
+          spinner: false
+        });
+        // if is a restart, do start part now
+        if (schedule) { 
+          console.log('terminei o stop do restar, vou fazer o start agora.', idx);
+          self.onClickPlay(idx);
+        }
+      }
+      else {
+        // if error, show alert with message
+        self.setState({
+          alert: { ...alertInitialState, display: true, message: response.data.mensagem },
+          spinner: false
+        });
+      }
+      // Update grid table
+      self.requestData();
+    }).catch(function (error) {
+      // error message
+      console.log(error);
+      self.setState({ alert: { ...alertInitialState, display: true }, spinner: false });
     });
   }
 
+  onClickPlay(idx) {
+    this.sendGet(idx, 'start');
+  }
+
+  onClickStop(idx) {
+    this.sendGet(idx, 'stop');
+  }
+
+  onClickRestart(idx) {
+    this.sendGet(idx, 'restart');
+  }
+
   render() {
+    console.log('render', this.state.time);
     return (
       <div className="App">
         <link
@@ -48,9 +136,30 @@ class App extends React.Component {
         />
         <script>var Alert = ReactBootstrap.Alert;</script>
         <header className="App-header">
+          {this.state.spinner && (
+            <div style={{
+              backgroundColor: 'white',
+              position: 'absolute',
+              height: '100px',
+              width: '100px',
+              marginTop: ((window.innerHeight / 2) - 50) + 'px',
+              marginLeft: ((window.innerWidth / 2) - 50) + 'px',
+              zIndex: 100,
+              flex: 1,
+              flexFlow: 'column',
+              alignItems: 'center'
+            }}>
+              <Loader
+                type="Oval"
+                color="#00BFFF"
+                height="100"
+                width="100"
+              />
+            </div>
+          )}
           {this.state.alert.display && (
             <Alert variant={this.state.alert.type}>
-              An error occurred while attempting to fetch data. Please try again later.
+              {this.state.alert.message}
             </Alert>
           )}
           <Container>
@@ -66,6 +175,7 @@ class App extends React.Component {
                       <th>Name</th>
                       <th>Status</th>
                       <th>Started At</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -73,9 +183,25 @@ class App extends React.Component {
                       return (
                         <tr key={idx}>
                           <td>{idx + 1}</td>
-                          <td>{item.name}</td>
+                          <td>{item.name.replace('/', '')}</td>
                           <td>{item.state.Status}</td>
-                          <td>{item.state.StartedAt}</td>
+                          <td>{moment(item.state.StartedAt).format('DD/MM/YYYY')}</td>
+                          <td>
+                            <Button
+                              variant="success"
+                              className="Button-space-left"
+                              disabled={item.state.Status === 'running'}
+                              onClick={() => this.onClickPlay(item.id)}>Play</Button>
+                            <Button
+                              variant="danger"
+                              className="Button-space-left"
+                              disabled={item.state.Status !== 'running'}
+                              onClick={() => this.onClickStop(item.id)}>Stop</Button>
+                            <Button
+                              variant="info"
+                              className="Button-space-left"
+                              onClick={() => this.onClickRestart(item.id)}>Restart</Button>
+                          </td>
                         </tr>
                       )
                     })}
