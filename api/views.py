@@ -1,25 +1,32 @@
 from rest_framework import views, response
 import docker
+from dockermanager import settings
+import requests
 
 # list containers
 class list(views.APIView):
     def get(self, request, format=None):
-        # get client docker from env
-        client = docker.from_env()
+        # get list from Docker API
+        url = '{}://{}:{}/containers/json?all=1'.format(settings.DOCKER_API_PROTOCOL,
+            settings.DOCKER_API_IP, settings.DOCKER_API_PORT) 
+        # call the Docker API
+        res = requests.get(url)
+        # get containers from returned json
+        containers = res.json()
         # instantiate empty list of containers
         containers_list = []
         # iterate container list to grab only needed fields
         # to keep payload small
-        for container in client.containers.list(all=True):
+        for container in containers:
             print(container)
-            print(container.__dict__)
+            # print(container.__dict__)
             # append 
             containers_list.append(
                 {
-                    'id': container.attrs['Id'],
-                    'name': container.attrs['Name'],
-                    'state': container.attrs['State'],
-                    'created': container.attrs['Created'],
+                    'id': container['Id'],
+                    'name': container['Names'][0],
+                    'state': container['State'],
+                    'status': container['Status'],
                 }
             )
         return response.Response(status=200, data={ 'retorno': 'OK', 'containers_list': containers_list })
@@ -28,27 +35,28 @@ class list(views.APIView):
 class start(views.APIView):
     def get(self, request, format=None):
         idx = request.GET.get('idx', '')
-        try:
-            client = docker.from_env()
-            container = client.containers.get(idx[:10])
-            container.start()
-            return response.Response(status=200, data={ 'retorno': 'OK' })
-        except Exception as e:
-            return response.Response(status=200, data={ 'retorno': 'ERRO', 'mensagem': str(e) })
+        status, res = Helper.send_command('start', idx)
+        return response.Response(status=status, data=res)
 
 
 class stop(views.APIView):
     def get(self, request, format=None):
         idx = request.GET.get('idx', '')
+        status, res = Helper.send_command('stop', idx)
+        return response.Response(status=status, data=res)
+
+
+class Helper:
+    def send_command(command, idx):
         try:
-            client = docker.from_env()
-            container = client.containers.get(idx[:10])
-            container.stop()
-            return response.Response(status=200, data={ 'retorno': 'OK' })
+            url = '{}://{}:{}/containers/{}/{}'.format(settings.DOCKER_API_PROTOCOL,
+                settings.DOCKER_API_IP, settings.DOCKER_API_PORT, idx, command) 
+            # call the Docker API
+            res = requests.post(url)
+            # Check if status code is 204 or 304 (both ok)
+            if res.status_code != 204 and res.status_code != 304:
+                return (200, { 'retorno': 'ERRO', 'mensagem': res.json()['message'] },)
+            else:
+                return (200, { 'retorno': 'OK' },)
         except Exception as e:
-            return response.Response(status=200, data={ 'retorno': 'ERRO', 'mensagem': str(e) })
-
-
-class restart(views.APIView):
-    def get(self, request, format=None):
-        return response.Response(status=200, data={ 'retorno': 'OK' })
+            return (200, { 'retorno': 'ERRO', 'mensagem': str(e) },)

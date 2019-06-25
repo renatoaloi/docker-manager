@@ -86,6 +86,8 @@ class App extends React.Component {
           console.log('terminei o stop do restar, vou fazer o start agora.', idx);
           self.onClickPlay(idx);
         }
+        // Update grid table
+        self.requestData();
       }
       else {
         // if error, show alert with message
@@ -94,8 +96,6 @@ class App extends React.Component {
           spinner: false
         });
       }
-      // Update grid table
-      self.requestData();
     }).catch(function (error) {
       // error message
       console.log(error);
@@ -173,8 +173,8 @@ class App extends React.Component {
                     <tr>
                       <th>#</th>
                       <th>Name</th>
+                      <th>State</th>
                       <th>Status</th>
-                      <th>Started At</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -184,18 +184,19 @@ class App extends React.Component {
                         <tr key={idx}>
                           <td>{idx + 1}</td>
                           <td>{item.name.replace('/', '')}</td>
-                          <td>{item.state.Status}</td>
-                          <td>{moment(item.state.StartedAt).format('DD/MM/YYYY')}</td>
+                          <td>{item.state}</td>
+                          {/* <td>{moment(item.created).format('DD/MM/YYYY')}</td> */}
+                          <td>{item.status}</td>
                           <td>
                             <Button
                               variant="success"
                               className="Button-space-left"
-                              disabled={item.state.Status === 'running'}
+                              disabled={item.state === 'running'}
                               onClick={() => this.onClickPlay(item.id)}>Play</Button>
                             <Button
                               variant="danger"
                               className="Button-space-left"
-                              disabled={item.state.Status !== 'running'}
+                              disabled={item.state !== 'running'}
                               onClick={() => this.onClickStop(item.id)}>Stop</Button>
                             <Button
                               variant="info"

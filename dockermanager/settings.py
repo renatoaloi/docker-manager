@@ -129,3 +129,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+
+DOCKER_API_PROTOCOL = 'http'
+DOCKER_API_IP = '192.168.99.101'
+DOCKER_API_PORT = 2375

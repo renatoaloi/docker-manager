@@ -21,5 +21,4 @@ urlpatterns = [
     path('list', views.list.as_view()),
     path('start', views.start.as_view()),
     path('stop', views.stop.as_view()),
-    path('restart', views.restart.as_view()),
 ]
