@@ -1,5 +1,5 @@
 # docker-manager
-Python/Django dashboard manager for docker
+React/Python/Django dashboard manager for docker
 
 ## Installation
 
