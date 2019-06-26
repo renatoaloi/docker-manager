@@ -1,6 +1,10 @@
 # docker-manager
 React/Python/Django dashboard manager for docker
 
+## Demo
+
+![](demo.gif)
+
 ## Installation
 
 Create virtual environment:
