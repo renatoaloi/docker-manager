@@ -54,7 +54,7 @@ docker-machine env
 Follow instructions in the link below to change the port and disable SSL for local testing:
 https://stackoverflow.com/questions/40294853/how-to-enable-docker-api-access-from-windows-running-docker-toolbox-docker-mach
 
-## Confirgure Docker API (for Docker Daemon)
+## Configure Docker API (for Docker Daemon)
 
 Follow instructions in the link below to configure Docker Daemon on Ubuntu:
 https://www.ivankrizsan.se/2016/05/18/enabling-docker-remote-api-on-ubuntu-16-04/
