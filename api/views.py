@@ -1,5 +1,4 @@
 from rest_framework import views, response
-import docker
 from dockermanager import settings
 import requests
 
